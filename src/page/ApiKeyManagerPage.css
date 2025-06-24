@@ -1,0 +1,102 @@
+.api-key-manager-page {
+    max-width: 700px;
+    margin: 2rem auto;
+    padding: 1.5rem;
+    font-family: Arial, sans-serif;
+    background-color: #f9f9f9;
+    border-radius: 8px;
+  }
+  
+  .error-message {
+    color: #fff;
+    background-color: #d9534f;
+    padding: 0.75rem;
+    margin-bottom: 1rem;
+    border-radius: 4px;
+  }
+  
+  .form-section {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+    margin-bottom: 1rem;
+    align-items: center;
+  }
+  
+  .label {
+    margin-right: 0.5rem;
+  }
+  
+  .input-field {
+    min-width: 150px;
+    padding: 0.4rem;
+    border: 1px solid #ccc;
+    border-radius: 4px;
+  }
+  
+  .button {
+    padding: 0.4rem 0.8rem;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+    font-size: 0.9rem;
+    color: #fff;
+  }
+  
+  .generate-button {
+    background-color: #007bff; /* Bootstrap primary */
+  }
+  
+  .fetch-button {
+    background-color: #28a745; /* Bootstrap success */
+  }
+  
+  .button:hover {
+    opacity: 0.9;
+  }
+  
+  .generated-key-section {
+    background-color: #fff;
+    border: 1px solid #ddd;
+    padding: 1rem;
+    margin-bottom: 1rem;
+    border-radius: 4px;
+  }
+  
+  .generated-key {
+    font-family: "Courier New", Courier, monospace;
+    background-color: #f8f8f8;
+    padding: 0.4rem 0.6rem;
+    display: inline-block;
+    margin-top: 0.5rem;
+    border-radius: 4px;
+  }
+  
+  .api-keys-section {
+    background-color: #fff;
+    border: 1px solid #ddd;
+    padding: 1rem;
+    border-radius: 4px;
+  }
+  
+  .api-keys-table {
+    width: 100%;
+    border-collapse: collapse;
+    margin-top: 1rem;
+  }
+  
+  .api-keys-table th,
+  .api-keys-table td {
+    border: 1px solid #ccc;
+    padding: 0.6rem;
+    text-align: left;
+  }
+  
+  .api-keys-table th {
+    background-color: #f0f0f0;
+  }
+  
+  .api-keys-table td {
+    background-color: #fafafa;
+  }
+  

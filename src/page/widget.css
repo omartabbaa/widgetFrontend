@@ -1,0 +1,531 @@
+/* Ensure Material Icons are loaded if you use them directly in CSS */
+@import url('https://fonts.googleapis.com/icon?family=Material+Icons+Outlined');
+
+/* Floating chat button styling */
+.floating-button {
+    position: fixed;
+    bottom: 20px;
+    right: 20px;
+    background-color: #007bff;
+    color: white;
+    width: 60px;
+    height: 60px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border: none;
+    border-radius: 50%;
+    font-size: 24px;
+    cursor: pointer;
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
+    z-index: 1000; /* Ensure it's above other elements */
+    transition: transform 0.2s ease-out, box-shadow 0.2s ease-out;
+}
+
+.floating-button:hover {
+    transform: scale(1.1);
+    box-shadow: 0 6px 20px rgba(0, 0, 0, 0.25);
+}
+
+/* Container for the entire chat widget */
+.chat-widget {
+    position: fixed;       /* Fix the widget position on the screen */
+    bottom: 80px;          /* Place it above the floating button */
+    right: 20px;           /* Align with the right edge */
+    width: 350px;
+    height: 500px;
+    background-color: #fff;
+    border-radius: 15px;
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.15);
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+    font-family: Arial, sans-serif;
+    z-index: 999;          /* Ensure the widget appears above most elements */
+    transition: opacity 0.3s ease, transform 0.3s ease;
+}
+
+.chat-widget.bottom-right {
+    bottom: 80px;
+    right: 20px;
+}
+
+.chat-widget.bottom-left {
+    bottom: 80px;
+    left: 20px;
+}
+
+/* Header styling for the chat widget */
+.chat-header {
+    background-color: #007bff;
+    color: white;
+    padding: 15px 20px;
+    font-size: 1.1rem;
+    font-weight: bold;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+/* Close button styling */
+.close-button {
+    background: none;
+    border: none;
+    color: white;
+    font-size: 20px;
+    cursor: pointer;
+    padding: 5px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.close-button .material-icons-outlined {
+    font-size: 22px;
+}
+
+/* Content area where messages appear */
+.chat-content {
+    flex: 1;
+    padding: 15px 20px;
+    background-color: #f9f9f9;
+    overflow-y: auto;
+}
+
+/* Welcome message styling */
+.welcome-message {
+    padding: 10px;
+    margin-bottom: 15px;
+    background-color: #eef2f7;
+    border-radius: 8px;
+    font-size: 0.9rem;
+    line-height: 1.5;
+}
+
+.welcome-message p {
+    margin: 0;
+}
+
+/* Individual chat message styling */
+.chat-message {
+    margin-bottom: 10px;
+    max-width: 75%;
+    padding: 10px 15px;
+    border-radius: 18px;
+    line-height: 1.4;
+    font-size: 0.95rem;
+}
+
+/* Style for user messages */
+.chat-message.user {
+    background-color: #dcf8c6;
+    color: #333;
+    align-self: flex-end;
+    text-align: right;
+    border-bottom-right-radius: 5px;
+}
+
+/* Style for AI messages */
+.chat-message.ai {
+    background-color: #ffffff;
+    color: #333;
+    align-self: flex-start;
+    text-align: left;
+    border: 1px solid #eee;
+    border-bottom-left-radius: 5px;
+    animation: messageReveal 0.5s ease-out;
+}
+
+@keyframes messageReveal {
+    0% {
+        opacity: 0;
+        transform: translateY(10px);
+    }
+    100% {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+/* Style for personalized messages */
+.chat-message.ai.isPersonalized {
+    background-color: #e1f5fe;
+    border-left: 3px solid #03a9f4;
+    font-weight: 500;
+    animation: personalizedReveal 0.7s ease-out;
+}
+
+@keyframes personalizedReveal {
+    0% {
+        opacity: 0;
+        transform: translateY(10px) scale(0.95);
+    }
+    50% {
+        opacity: 0.8;
+        transform: translateY(5px) scale(0.98);
+    }
+    100% {
+        opacity: 1;
+        transform: translateY(0) scale(1);
+    }
+}
+
+/* Style for system messages */
+.chat-message.system {
+    background-color: #f0f0f0;
+    color: #555;
+    font-size: 0.9em;
+    margin: 5px 0;
+    text-align: center;
+    max-width: 100%;
+    padding: 6px 10px;
+}
+
+.chat-message.system.isMetadata {
+    font-size: 0.8em;
+    opacity: 0.8;
+    background-color: transparent;
+    border: none;
+    margin-top: 0;
+    padding-top: 0;
+}
+
+/* IMPORTANT: Style for limit reached messages */
+.chat-message.system.isLimitReached {
+    background-color: #fef2f2;
+    color: #dc2626;
+    border: 1px solid #fecaca;
+    font-weight: 600;
+    font-size: 0.9em;
+    padding: 12px 15px;
+    border-radius: 8px;
+    margin: 10px 0;
+    text-align: center;
+    max-width: 100%;
+    animation: limitReachedPulse 2s ease-in-out infinite;
+}
+
+@keyframes limitReachedPulse {
+    0%, 100% {
+        box-shadow: 0 0 0 0 rgba(220, 38, 38, 0.4);
+    }
+    50% {
+        box-shadow: 0 0 0 10px rgba(220, 38, 38, 0);
+    }
+}
+
+/* IMPORTANT: Style for usage info messages */
+.chat-message.system.isUsageInfo {
+    background-color: #f0fdf4;
+    color: #166534;
+    border: 1px solid #bbf7d0;
+    font-weight: 500;
+    font-size: 0.9em;
+    padding: 10px 15px;
+    border-radius: 8px;
+    margin: 8px 0;
+    text-align: center;
+    max-width: 100%;
+}
+
+.chat-message.system.isUsageInfo.isLimitReached {
+    background-color: #fef2f2;
+    color: #dc2626;
+    border: 1px solid #fecaca;
+    animation: limitReachedPulse 2s ease-in-out infinite;
+}
+
+/* Input area at the bottom */
+.chat-input {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    border-top: 1px solid #e0e0e0;
+    padding: 10px 15px;
+    background-color: #fff;
+}
+
+/* Text input styling */
+.chat-input input {
+    flex: 1;
+    padding: 10px 12px;
+    border: 1px solid #ccc;
+    border-radius: 20px;
+    font-size: 0.9rem;
+    outline: none;
+}
+
+.chat-input input:focus {
+    border-color: #007bff; /* Will be overridden by inline style */
+}
+
+/* Send button styling */
+.chat-input button {
+    background: none;
+    border: none;
+    padding: 8px;
+    border-radius: 50%;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: background-color 0.2s ease;
+}
+
+.chat-input button:hover {
+    background-color: rgba(0,0,0,0.1);
+}
+
+.chat-input button .material-icons-outlined {
+    font-size: 24px;
+}
+
+.logout-button {
+    background-color: #dc3545;
+    color: white;
+    border: none;
+    padding: 6px 10px;
+    margin-right: 8px;
+    border-radius: 4px;
+    cursor: pointer;
+}
+
+.api-key-section {
+    padding: 1rem;
+    background-color: #f8f9fa;
+    border-bottom: 1px solid #dee2e6;
+}
+
+.api-key-form {
+    display: flex;
+    flex-direction: column;
+    gap: 0.75rem;
+}
+
+.api-key-input {
+    width: 100%;
+    padding: 0.75rem;
+    border: 1px solid #ced4da;
+    border-radius: 4px;
+    font-size: 0.9rem;
+    transition: all 0.2s ease;
+}
+
+.api-key-input:focus {
+    outline: none;
+    border-color: #007bff;
+    box-shadow: 0 0 0 0.2rem rgba(0,123,255,.25);
+}
+
+.api-key-submit {
+    padding: 0.75rem 1rem;
+    background-color: #007bff;
+    color: white;
+    border: none;
+    border-radius: 4px;
+    font-size: 0.9rem;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.api-key-submit:hover:not(:disabled) {
+    background-color: #0056b3;
+}
+
+.api-key-submit:disabled {
+    background-color: #ccc;
+    cursor: not-allowed;
+    opacity: 0.7;
+}
+
+.error-message {
+    color: #dc3545;
+    font-size: 0.875rem;
+    padding: 0.5rem;
+    background-color: #f8d7da;
+    border-radius: 4px;
+    border: 1px solid #f5c6cb;
+}
+
+/* Disabled state for chat input */
+.chat-input input:disabled,
+.chat-input button:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+}
+
+/* Cool loading animation for AI response */
+.loading-message {
+    display: flex;
+    align-items: center;
+    max-width: 70%;
+    margin-bottom: 12px;
+    padding: 12px 16px;
+    background-color: #f0f7ff;
+    border-radius: 12px;
+    border-top-left-radius: 4px;
+    box-shadow: 0 2px 8px rgba(0, 123, 255, 0.15);
+}
+
+.loading-dots {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+}
+
+.loading-dot {
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    background-color: #007bff;
+    animation: pulse 1.5s infinite;
+}
+
+.loading-dot:nth-child(2) {
+    animation-delay: 0.2s;
+}
+
+.loading-dot:nth-child(3) {
+    animation-delay: 0.4s;
+}
+
+@keyframes pulse {
+    0% {
+        transform: scale(0.8);
+        opacity: 0.5;
+    }
+    50% {
+        transform: scale(1.2);
+        opacity: 1;
+    }
+    100% {
+        transform: scale(0.8);
+        opacity: 0.5;
+    }
+}
+
+/* Advanced loading animation with thinking brain */
+.ai-thinking {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    margin-bottom: 12px;
+}
+
+.thinking-brain {
+    display: flex;
+    align-items: center;
+    margin-bottom: 4px;
+    padding: 10px 12px;
+    background-color: #e8f4ff;
+    border-radius: 12px;
+    box-shadow: 0 2px 6px rgba(0, 123, 255, 0.1);
+    color: #0066cc;
+    font-size: 0.9rem;
+    font-weight: 500;
+}
+
+.brain-icon {
+    margin-right: 8px;
+    display: inline-block;
+    width: 24px;
+    height: 24px;
+    background-color: #007bff;
+    mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M9.5 2C5.4 2 2 5.4 2 9.5C2 13.6 5.4 17 9.5 17H10V22L16 16L10 10.5V14.5H9.5C7.5 14.5 5.8 12.8 5.8 10.8C5.8 8.8 7.5 7.2 9.5 7.2H18.4C20.4 7.2 22 8.8 22 10.8C22 12.8 20.4 14.5 18.4 14.5H12.5'/%3E%3C/svg%3E") no-repeat 50% 50%;
+    -webkit-mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M9.5 2C5.4 2 2 5.4 2 9.5C2 13.6 5.4 17 9.5 17H10V22L16 16L10 10.5V14.5H9.5C7.5 14.5 5.8 12.8 5.8 10.8C5.8 8.8 7.5 7.2 9.5 7.2H18.4C20.4 7.2 22 8.8 22 10.8C22 12.8 20.4 14.5 18.4 14.5H12.5'/%3E%3C/svg%3E") no-repeat 50% 50%;
+    animation: brainPulse 2s infinite;
+}
+
+@keyframes brainPulse {
+    0% {
+        transform: scale(1);
+        opacity: 0.8;
+    }
+    50% {
+        transform: scale(1.1);
+        opacity: 1;
+    }
+    100% {
+        transform: scale(1);
+        opacity: 0.8;
+    }
+}
+
+.thinking-indicator {
+    display: flex;
+    align-items: center;
+    padding: 6px 12px;
+    background-color: #f0f7ff;
+    border-radius: 10px;
+    font-size: 0.85rem;
+    color: #666;
+}
+
+.thinking-dots {
+    display: flex;
+    margin-left: 4px;
+}
+
+.thinking-dot {
+    width: 5px;
+    height: 5px;
+    margin: 0 2px;
+    background-color: #0066cc;
+    border-radius: 50%;
+    opacity: 0.6;
+    animation: dotFade 1.4s infinite;
+}
+
+.thinking-dot:nth-child(1) { animation-delay: 0s; }
+.thinking-dot:nth-child(2) { animation-delay: 0.2s; }
+.thinking-dot:nth-child(3) { animation-delay: 0.4s; }
+
+@keyframes dotFade {
+    0%, 100% { opacity: 0.4; transform: scale(0.8); }
+    50% { opacity: 1; transform: scale(1.2); }
+}
+
+/* Progress bar animation */
+.progress-container {
+    height: 4px;
+    width: 100%;
+    background-color: #e0e0e0;
+    border-radius: 2px;
+    overflow: hidden;
+    margin-top: 6px;
+}
+
+.progress-bar {
+    height: 100%;
+    width: 30%;
+    background-color: #007bff;
+    border-radius: 2px;
+    animation: progressAnim 2s infinite;
+}
+
+@keyframes progressAnim {
+    0% { width: 0%; }
+    50% { width: 70%; }
+    100% { width: 100%; }
+}
+
+/* For Material Icons */
+.material-icons-outlined {
+    font-family: 'Material Icons Outlined';
+    font-weight: normal;
+    font-style: normal;
+    font-size: 24px; /* Preferred icon size */
+    display: inline-block;
+    line-height: 1;
+    text-transform: none;
+    letter-spacing: normal;
+    word-wrap: normal;
+    white-space: nowrap;
+    direction: ltr;
+    -webkit-font-smoothing: antialiased;
+    text-rendering: optimizeLegibility;
+    -moz-osx-font-smoothing: grayscale;
+    font-feature-settings: 'liga';
+}
+  

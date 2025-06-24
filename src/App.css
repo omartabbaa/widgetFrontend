@@ -1,0 +1,14 @@
+.main-content {
+  padding: 2rem;
+  max-width: 1200px;
+  margin: 0 auto;
+}
+
+/* Ensure the widget stays on top of other content */
+.chat-widget {
+  z-index: 1000;
+}
+
+.floating-button {
+  z-index: 1000;
+}
