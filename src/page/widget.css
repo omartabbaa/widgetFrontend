@@ -220,19 +220,22 @@
     color: #166534;
     border: 1px solid #bbf7d0;
     font-weight: 500;
-    font-size: 0.9em;
-    padding: 10px 15px;
-    border-radius: 8px;
+    font-size: 0.85em;
+    padding: 10px 12px;
+    border-radius: 6px;
     margin: 8px 0;
     text-align: center;
     max-width: 100%;
 }
 
-.chat-message.system.isUsageInfo.isLimitReached {
-    background-color: #fef2f2;
-    color: #dc2626;
-    border: 1px solid #fecaca;
-    animation: limitReachedPulse 2s ease-in-out infinite;
+/* IMPORTANT: Style for metadata messages */
+.chat-message.system.isMetadata {
+    font-size: 0.8em;
+    opacity: 0.8;
+    background-color: transparent;
+    border: none;
+    margin-top: 0;
+    padding-top: 0;
 }
 
 /* Input area at the bottom */

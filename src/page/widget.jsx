@@ -5,6 +5,7 @@ import SignupForm from "../components/SignupForm";
 import { BACKEND_URL, getAuthHeaders } from '../config';
 import { useAuth } from '../context/AuthContext';
 import { usePersonalizedAnswer } from '../context/PersonalizedAnswerContext';
+import { useSubscriptionContext } from '../context/SubscriptionContext';
 import Cookies from 'js-cookie';
 
 const Widget = () => {
@@ -16,6 +17,30 @@ const Widget = () => {
     setIsProcessing, 
     setPersonalizationError 
   } = usePersonalizedAnswer();
+  
+  // IMPORTANT: Use subscription context instead of local state
+  const { 
+    conversationsCount, 
+    maxConversations, 
+    isLoading: subscriptionLoading, 
+    error: subscriptionError,
+    getUsagePercentage,
+    formatLimitValue,
+    fetchConversationsCount,
+    checkAndAutoReset,
+    canCreateConversation,
+    testCheckMonthlyReset,
+    testForceResetMonthlyUsage,
+    resetMessage,
+    setResetMessage,
+    // Invoice and plan data
+    pendingInvoices,
+    currentPlan,
+    isLoadingInvoices,
+    invoiceError,
+    fetchInvoiceAndPlanData
+  } = useSubscriptionContext();
+
   const [showLogin, setShowLogin] = useState(true);
   const [loginEmail, setLoginEmail] = useState("");
   const [loginPassword, setLoginPassword] = useState("");
@@ -77,6 +102,76 @@ const Widget = () => {
     // Potentially other fields like aiName, fallbackResponse if needed later
   });
 
+  // IMPORTANT: Display usage information in chat
+  const displayUsageInfo = () => {
+    if (maxConversations === -1) {
+      const usageMessage = `Current usage: ${conversationsCount} conversations (Unlimited plan)`;
+      setMessages((prev) => [
+        ...prev,
+        {
+          text: usageMessage,
+          sender: "system",
+          isUsageInfo: true
+        }
+      ]);
+    } else {
+      const usagePercentage = getUsagePercentage(conversationsCount, maxConversations);
+      const planInfo = currentPlan ? ` - Plan: ${currentPlan.name}` : '';
+      const usageMessage = `Usage: ${conversationsCount}/${maxConversations} conversations (${usagePercentage}% used)${planInfo}`;
+      
+      let statusMessage = "";
+      if (conversationsCount >= maxConversations) {
+        statusMessage = " ⚠️ Limit reached!";
+      } else if (usagePercentage >= 80) {
+        statusMessage = " ⚠️ Nearing limit!";
+      }
+
+      setMessages((prev) => [
+        ...prev,
+        {
+          text: usageMessage + statusMessage,
+          sender: "system",
+          isUsageInfo: true,
+          isLimitReached: conversationsCount >= maxConversations
+        }
+      ]);
+    }
+
+    // Also show pending invoices if any
+    if (pendingInvoices && pendingInvoices.length > 0) {
+      const invoiceMessage = `📄 Pending invoices: ${pendingInvoices.length} invoice(s) found`;
+      setMessages((prev) => [
+        ...prev,
+        {
+          text: invoiceMessage,
+          sender: "system",
+          isUsageInfo: true
+        }
+      ]);
+    }
+  };
+
+  // IMPORTANT: Manually refresh usage data
+  const refreshUsageData = async () => {
+    console.log("🔄 IMPORTANT: Manually refreshing usage data...");
+    
+    if (!businessId || !apiKey) {
+      console.log("⚠️ IMPORTANT: Cannot refresh - missing businessId or apiKey");
+      return;
+    }
+
+    // First check monthly reset
+    await checkAndAutoReset(businessId, apiKey);
+
+    // Then fetch updated conversations count
+    await fetchConversationsCount(businessId, apiKey);
+
+    // Display updated usage info
+    displayUsageInfo();
+
+    console.log("✅ IMPORTANT: Usage data refreshed successfully");
+  };
+
   // Fetch widget configuration
   useEffect(() => {
     const fetchWidgetConfig = async () => {
@@ -105,6 +200,24 @@ const Widget = () => {
 
     fetchWidgetConfig();
   }, [businessId, apiKey]);
+
+  // IMPORTANT: Check monthly reset and fetch conversations count when businessId is set
+  useEffect(() => {
+    if (businessId && apiKey) {
+      console.log("🔄 IMPORTANT: Business ID set, checking monthly reset and fetching conversations count...");
+      console.log("📊 IMPORTANT: Business ID:", businessId);
+      console.log("🔑 IMPORTANT: API Key:", apiKey?.substring(0, 5) + "...");
+      
+      // First check and handle monthly reset
+      checkAndAutoReset(businessId, apiKey).then(() => {
+        // Then fetch conversations count
+        fetchConversationsCount(businessId, apiKey);
+        
+        // Also fetch invoice and plan data to get correct plan information
+        fetchInvoiceAndPlanData(businessId, apiKey);
+      });
+    }
+  }, [businessId, apiKey, checkAndAutoReset, fetchConversationsCount, fetchInvoiceAndPlanData]);
 
   // Fetch AI Personality configuration
   useEffect(() => {
@@ -203,6 +316,28 @@ const Widget = () => {
       return null;
     }
 
+    // IMPORTANT: Check conversation limits before creating
+    if (!canCreateConversation()) {
+      console.log("❌ IMPORTANT: Cannot create conversation - limit reached!");
+      
+      const limitMessage = maxConversations === -1 
+        ? "Unable to create conversation at this time. Please try again later."
+        : `Conversation limit reached! You have used ${conversationsCount} out of ${maxConversations} conversations this month. Please upgrade your plan or wait until next month's reset.`;
+
+      setMessages((prev) => [
+        ...prev,
+        {
+          text: limitMessage,
+          sender: "system",
+          isLimitReached: true
+        }
+      ]);
+
+      return null;
+    }
+
+    console.log("✅ IMPORTANT: Conversation limit check passed, proceeding with creation...");
+
     // Track retries for error handling
     let retries = 0;
     const maxRetries = 2;
@@ -215,7 +350,7 @@ const Widget = () => {
           businessId: businessId,
           userId: userId
         };
-        
+
         // Log request details before sending
         console.log("🚀 CONVERSATION CREATE - REQUEST DETAILS:");
         console.log("- Endpoint:", `${BACKEND_URL}/api/conversations/create`);
@@ -227,7 +362,7 @@ const Widget = () => {
         });
         console.log("- Request Body:", JSON.stringify(requestBody, null, 2));
         console.log("- Attempt:", retries + 1, "of", maxRetries + 1);
-        
+
         // Add detailed log of what's being sent
         console.log("📊 CONVERSATION CREATE - FULL PAYLOAD:", {
           endpoint: `${BACKEND_URL}/api/conversations/create`,
@@ -239,7 +374,7 @@ const Widget = () => {
             "X-API-KEY": "[REDACTED]"
           }
         });
-        
+
         // Using the exact endpoint structure with updated DTO request body
         const response = await fetch(`${BACKEND_URL}/api/conversations/create`, {
           method: "POST",
@@ -252,7 +387,7 @@ const Widget = () => {
         });
 
         console.log("📥 CONVERSATION CREATE - RESPONSE STATUS:", response.status, response.statusText);
-        
+
         if (!response.ok) {
           // Get error details
           let errorDetails = null;
@@ -267,37 +402,37 @@ const Widget = () => {
           } catch (e) {
             console.error("❌ Unable to read error details");
           }
-          
+
           // Check if this is a duplicate user error
-          const isDuplicateUserError = 
-            errorDetails?.error?.includes("duplicate key value") && 
-            errorDetails?.error?.includes("user_") && 
+          const isDuplicateUserError =
+            errorDetails?.error?.includes("duplicate key value") &&
+            errorDetails?.error?.includes("user_") &&
             errorDetails?.error?.includes("already exists");
-          
+
           if (isDuplicateUserError && retries < maxRetries) {
             console.log("👀 Detected duplicate user error. Trying with a different userId...");
-            
+
             // Generate a new UUID to avoid the conflict
             const newUserId = crypto.randomUUID();
             console.log("👤 Generated new userId (UUID):", newUserId);
             setUserId(newUserId);
             Cookies.set('user-id', newUserId, { expires: 365 });
-            
+
             // Increment retries and try again
             retries++;
             continue;
           }
-          
+
           // For other errors or if we've exceeded max retries
           lastError = errorDetails?.error || `HTTP error ${response.status}`;
           console.error("❌ Failed to create conversation - Status:", response.status);
-          
+
           // If this is the last attempt, break out of the loop
           if (retries >= maxRetries) {
             console.error("❌ Max retries exceeded. Using fallback approach...");
             break;
           }
-          
+
           // Increment retries and try again
           retries++;
           continue;
@@ -306,9 +441,9 @@ const Widget = () => {
         // Parse the response correctly
         const responseText = await response.text();
         console.log("📥 CONVERSATION CREATE - RAW RESPONSE:", responseText);
-        
+
         let data;
-        
+
         try {
           data = JSON.parse(responseText);
           console.log("📥 CONVERSATION CREATE - PARSED RESPONSE:", JSON.stringify(data, null, 2));
@@ -316,10 +451,10 @@ const Widget = () => {
           console.error("❌ Failed to parse conversation response:", e, "Raw response:", responseText);
           return null;
         }
-        
+
         // Extract conversation ID handling both camelCase and snake_case formats
         const conversationId = data.conversationId || data.conversation_id;
-        
+
         if (data && conversationId) {
           console.log("✅ CONVERSATION CREATE - SUCCESS! Conversation created with ID:", conversationId);
           console.log("✅ CONVERSATION CREATE - Full response data:", {
@@ -328,18 +463,24 @@ const Widget = () => {
             userId: data.userId,
             startTime: data.startTime
           });
-          
+
           // Store as string since it's a UUID
           setConversationId(conversationId);
           conversationCreated.current = true;
-          
+
           // Store in cookie for 1 day
           Cookies.set('conversation-id', conversationId, { expires: 1 });
-          
+
+          // IMPORTANT: Refresh conversations count after successful creation
+          console.log("🔄 IMPORTANT: Refreshing conversations count after successful creation...");
+          setTimeout(() => {
+            fetchConversationsCount(businessId, apiKey);
+          }, 1000);
+
           // Create a HandoffState for this conversation
           try {
             console.log("🔄 Creating HandoffState for conversation:", conversationId);
-            
+
             // Prepare HandoffState with all boolean flags set to false
             const handoffStateDTO = {
               conversationId: conversationId,
@@ -351,12 +492,12 @@ const Widget = () => {
               isTicketCreated: false,
               currentStep: 0
             };
-            
+
             console.log("📤 HANDOFF STATE CREATE - REQUEST DETAILS:");
             console.log("- Endpoint:", `${BACKEND_URL}/api/handoff-states`);
             console.log("- Method: POST");
             console.log("- Request Body:", JSON.stringify(handoffStateDTO, null, 2));
-            
+
             // Add detailed log of the handoff state creation
             console.log("📊 HANDOFF STATE CREATE - FULL PAYLOAD:", {
               endpoint: `${BACKEND_URL}/api/handoff-states`,
@@ -368,7 +509,7 @@ const Widget = () => {
                 "X-API-KEY": "[REDACTED]"
               }
             });
-            
+
             // Create the HandoffState
             fetch(`${BACKEND_URL}/api/handoff-states`, {
               method: "POST",
@@ -381,7 +522,7 @@ const Widget = () => {
             })
             .then(response => {
               console.log("📥 HANDOFF STATE CREATE - RESPONSE STATUS:", response.status, response.statusText);
-              
+
               if (!response.ok) {
                 console.warn("⚠️ Failed to create HandoffState:", response.status);
                 response.text().then(text => {
@@ -389,7 +530,7 @@ const Widget = () => {
                 }).catch(() => {});
                 return;
               }
-              
+
               response.text().then(text => {
                 try {
                   const handoffData = JSON.parse(text);
@@ -409,7 +550,7 @@ const Widget = () => {
             // Log error but don't block conversation creation
             console.error("❌ Error creating HandoffState:", handoffError);
           }
-          
+
           return conversationId;
         } else {
           console.error("❌ CONVERSATION CREATE - FAILED! No ID in response:", data);
@@ -418,7 +559,7 @@ const Widget = () => {
       } catch (error) {
         console.error("❌ CONVERSATION CREATE - ERROR:", error);
         console.error("❌ CONVERSATION CREATE - Error stack:", error.stack);
-        
+
         // Store the error and try again if we haven't exceeded max retries
         lastError = error.message;
         if (retries < maxRetries) {
@@ -429,22 +570,22 @@ const Widget = () => {
         break;
       }
     }
-    
+
     // If we've exhausted all retries, create a "fake" conversation ID as fallback
     // This allows the chat to continue working even if conversation tracking fails
     if (retries > maxRetries) {
       console.log("⚠️ FALLBACK: Creating temporary conversation ID after multiple failures");
       const fallbackConversationId = `fallback-${Date.now()}-${Math.floor(Math.random() * 1000)}`;
-      
+
       setConversationId(fallbackConversationId);
       conversationCreated.current = true;
       console.log("⚠️ Using fallback conversation ID:", fallbackConversationId);
       console.log("⚠️ Some conversation tracking features may be limited");
-      
+
       // Do not store fallback IDs in cookies
       return fallbackConversationId;
     }
-    
+
     return null;
   };
 
@@ -851,6 +992,14 @@ const Widget = () => {
         console.log("🔄 Restoring conversation from cookie:", storedConversationId);
         setConversationId(storedConversationId);
         conversationCreated.current = true;
+      }
+      
+      // IMPORTANT: Log current usage when widget is opened
+      if (businessId) {
+        console.log("📊 IMPORTANT: Widget opened - Current usage status:");
+        console.log(`📊 IMPORTANT: Conversations: ${conversationsCount}/${formatLimitValue(maxConversations)}`);
+        console.log(`📊 IMPORTANT: Limit reached: ${conversationsCount >= maxConversations && maxConversations !== -1}`);
+        console.log(`📊 IMPORTANT: Can create new conversation: ${canCreateConversation()}`);
       }
     }
   };
@@ -1421,6 +1570,34 @@ const Widget = () => {
     // Create conversation if this is the first message and no active conversation exists
     if (!currentConversationId && !conversationCreated.current) {
       console.log("⏳ CHAT - Creating conversation before sending first message");
+      
+      // IMPORTANT: Check conversation limits before creating
+      if (!canCreateConversation()) {
+        console.log("❌ IMPORTANT: Cannot create conversation in handleSend - limit reached!");
+
+        const limitMessage = maxConversations === -1 
+          ? "Unable to start a conversation at this time. Please try again later."
+          : `Conversation limit reached! You have used ${conversationsCount} out of ${maxConversations} conversations this month. Please upgrade your plan or wait until next month's reset.`;
+
+        setMessages((prev) => [
+          ...prev,
+          {
+            text: limitMessage,
+            sender: "system",
+            isLimitReached: true
+          }
+        ]);
+
+        // Remove the loading animation
+        setLoading(false);
+        setMessages((prev) => prev.filter(msg => !msg.isLoading || msg.id !== loadingId));
+
+        // Clear the loading stage intervals
+        loadingIntervals.forEach(clearTimeout);
+
+        return;
+      }
+
       const newConversationId = await createConversation();
       if (newConversationId) {
         console.log("✅ CHAT - Conversation created successfully, ID:", newConversationId);
@@ -2471,22 +2648,103 @@ const Widget = () => {
 
               {businessId && (
                 <div className="api-key-section" style={{ margin: '10px 0', padding: '10px', backgroundColor: widgetConfig.secondaryColor, borderRadius: '4px' }}>
-                  <button 
-                    onClick={testPersonalizationEndpoint}
-                    style={{
-                      padding: '8px 12px',
-                      backgroundColor: widgetConfig.primaryColor,
-                      color: 'white', // Assuming white text on primary color
-                      border: 'none',
-                      borderRadius: '4px',
-                      cursor: 'pointer',
-                      fontFamily: widgetConfig.fontFamily
-                    }}
-                  >
-                    Test Personalization API
-                  </button>
+                  <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
+                    <button 
+                      onClick={testPersonalizationEndpoint}
+                      style={{
+                        padding: '8px 12px',
+                        backgroundColor: widgetConfig.primaryColor,
+                        color: 'white', // Assuming white text on primary color
+                        border: 'none',
+                        borderRadius: '4px',
+                        cursor: 'pointer',
+                        fontFamily: widgetConfig.fontFamily
+                      }}
+                    >
+                      Test Personalization API
+                    </button>
+                    
+                    <button 
+                      onClick={displayUsageInfo}
+                      style={{
+                        padding: '8px 12px',
+                        backgroundColor: conversationsCount >= maxConversations && maxConversations !== -1 ? '#dc2626' : '#059669',
+                        color: 'white',
+                        border: 'none',
+                        borderRadius: '4px',
+                        cursor: 'pointer',
+                        fontFamily: widgetConfig.fontFamily
+                      }}
+                    >
+                      {subscriptionLoading ? 'Loading...' : `Usage: ${conversationsCount}/${formatLimitValue(maxConversations)}${currentPlan ? ` (${currentPlan.name})` : ''}`}
+                    </button>
+
+                    <button 
+                      onClick={refreshUsageData}
+                      disabled={subscriptionLoading}
+                      style={{
+                        padding: '8px 12px',
+                        backgroundColor: subscriptionLoading ? '#9ca3af' : '#3b82f6',
+                        color: 'white',
+                        border: 'none',
+                        borderRadius: '4px',
+                        cursor: subscriptionLoading ? 'not-allowed' : 'pointer',
+                        fontFamily: widgetConfig.fontFamily
+                      }}
+                    >
+                      {subscriptionLoading ? '⏳' : '🔄'}
+                    </button>
+
+                    <button 
+                      onClick={() => testCheckMonthlyReset(businessId, apiKey)}
+                      disabled={subscriptionLoading}
+                      style={{
+                        padding: '8px 12px',
+                        backgroundColor: subscriptionLoading ? '#9ca3af' : '#f59e0b',
+                        color: 'white',
+                        border: 'none',
+                        borderRadius: '4px',
+                        cursor: subscriptionLoading ? 'not-allowed' : 'pointer',
+                        fontFamily: widgetConfig.fontFamily
+                      }}
+                    >
+                      Check Reset
+                    </button>
+
+                    <button 
+                      onClick={() => testForceResetMonthlyUsage(businessId, apiKey)}
+                      disabled={subscriptionLoading}
+                      style={{
+                        padding: '8px 12px',
+                        backgroundColor: subscriptionLoading ? '#9ca3af' : '#dc2626',
+                        color: 'white',
+                        border: 'none',
+                        borderRadius: '4px',
+                        cursor: subscriptionLoading ? 'not-allowed' : 'pointer',
+                        fontFamily: widgetConfig.fontFamily
+                      }}
+                    >
+                      Force Reset
+                    </button>
+
+                    <button 
+                      onClick={() => fetchInvoiceAndPlanData(businessId, apiKey)}
+                      disabled={isLoadingInvoices}
+                      style={{
+                        padding: '8px 12px',
+                        backgroundColor: isLoadingInvoices ? '#9ca3af' : '#8b5cf6',
+                        color: 'white',
+                        border: 'none',
+                        borderRadius: '4px',
+                        cursor: isLoadingInvoices ? 'not-allowed' : 'pointer',
+                        fontFamily: widgetConfig.fontFamily
+                      }}
+                    >
+                      {isLoadingInvoices ? '⏳' : '📄'} Invoices
+                    </button>
+                  </div>
                   <div style={{ marginTop: '5px', fontSize: '12px', color: widgetConfig.textColor, fontFamily: widgetConfig.fontFamily }}>
-                    Use this button to test the personalization API directly
+                    Use these buttons to test the personalization API and view usage information
                   </div>
                 </div>
               )}

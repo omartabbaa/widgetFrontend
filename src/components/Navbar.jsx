@@ -12,6 +12,7 @@ const Navbar = () => {
         <Link to="/" className="nav-link">Home</Link>
         <Link to="/api-key-manager" className="nav-link">API Keys</Link>
         <Link to="/embedding-insert" className="nav-link">Embeddings</Link>
+        <Link to="/file-upload" className="nav-link">File Upload</Link>
       </div>
     </nav>
   );
