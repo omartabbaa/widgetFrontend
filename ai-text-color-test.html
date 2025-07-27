@@ -1,0 +1,200 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AI Text Color Test - Fixed!</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            padding: 20px;
+            background-color: #f5f5f5;
+        }
+        .test-container {
+            max-width: 800px;
+            margin: 0 auto;
+            background: white;
+            padding: 30px;
+            border-radius: 10px;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+        }
+        .test-section {
+            margin-bottom: 30px;
+            padding: 20px;
+            border: 1px solid #ddd;
+            border-radius: 8px;
+        }
+        .chat-message {
+            margin-bottom: 10px;
+            max-width: 75%;
+            padding: 10px 15px;
+            border-radius: 18px;
+            line-height: 1.4;
+            font-size: 0.95rem;
+            word-wrap: break-word;
+        }
+        .chat-message.ai {
+            align-self: flex-start;
+            text-align: left;
+            border: 1px solid #eee;
+            border-bottom-left-radius: 5px;
+            margin-right: auto;
+        }
+        .chat-message.ai.isPersonalized {
+            font-weight: 500;
+        }
+        .code-example {
+            background: #f8f9fa;
+            padding: 15px;
+            border-radius: 5px;
+            font-family: 'Courier New', monospace;
+            font-size: 14px;
+            margin: 10px 0;
+            overflow-x: auto;
+        }
+        .fix-highlight {
+            background: #d4edda;
+            padding: 15px;
+            border-radius: 5px;
+            border-left: 4px solid #28a745;
+            margin: 15px 0;
+        }
+    </style>
+</head>
+<body>
+    <div class="test-container">
+        <h1>✅ AI Text Color Issue - FIXED!</h1>
+        
+        <div class="test-section">
+            <h2>🎯 Problem Identified and Resolved</h2>
+            <p>The AI text color from the API wasn't being displayed because of <strong>CSS overrides</strong> in the widget.css file.</p>
+            
+            <h3>❌ The Problem</h3>
+            <div class="code-example">
+/* widget.css - BEFORE (Overriding theme colors) */
+.chat-message.ai {
+    background-color: #ffffff;  /* ❌ Hardcoded */
+    color: #333;               /* ❌ Hardcoded - This was the problem! */
+    align-self: flex-start;
+    /* ... other styles ... */
+}
+            </div>
+            
+            <h3>✅ The Solution</h3>
+            <div class="code-example">
+/* widget.css - AFTER (Theme colors work properly) */
+.chat-message.ai {
+    /* ✅ Removed hardcoded background-color and color */
+    align-self: flex-start;
+    text-align: left;
+    border: 1px solid #eee;
+    border-bottom-left-radius: 5px;
+    animation: messageReveal 0.5s ease-out;
+    margin-right: auto;
+}
+            </div>
+        </div>
+        
+        <div class="test-section">
+            <h2>🔧 What Was Fixed</h2>
+            <div class="fix-highlight">
+                <strong>Removed hardcoded colors from CSS:</strong>
+                <ul>
+                    <li>❌ <code>color: #333;</code> from <code>.chat-message.ai</code></li>
+                    <li>❌ <code>background-color: #ffffff;</code> from <code>.chat-message.ai</code></li>
+                    <li>❌ <code>background-color: #dcf8c6;</code> from <code>.chat-message.user</code></li>
+                    <li>❌ <code>color: #333;</code> from <code>.chat-message.user</code></li>
+                    <li>❌ <code>background-color: #e1f5fe;</code> from <code>.chat-message.ai.isPersonalized</code></li>
+                    <li>❌ <code>border-left: 3px solid #03a9f4;</code> from <code>.chat-message.ai.isPersonalized</code></li>
+                </ul>
+            </div>
+        </div>
+        
+        <div class="test-section">
+            <h2>🎨 How Theme Colors Now Work</h2>
+            
+            <h3>Example API Theme Response:</h3>
+            <div class="code-example">
+{
+  "aiBubbleText": "#ff6b35",        // 🧠 AI text color (now works!)
+  "aiBubbleBg": "#fff8f5",          // 🧠 AI background (now works!)
+  "userBubbleText": "#2c5aa0",     // 👤 User text color
+  "userBubbleBg": "#e3f2fd",       // 👤 User background
+  "personalizedTagTextColor": "#8e24aa" // ✨ Personalized border color
+}
+            </div>
+            
+            <h3>How It's Applied in JavaScript:</h3>
+            <div class="code-example">
+const messageStyle = (sender) => {
+  if (sender === 'ai') {
+    return {
+      ...getBackgroundStyle(widgetTheme.aiBubbleBg),    // ✅ Theme background
+      color: widgetTheme.aiBubbleText,                  // ✅ Theme text color
+      fontFamily: widgetTheme.fontFamily,
+      fontSize: widgetTheme.aiBubbleFontSize,
+    };
+  }
+  // ... other message types
+};
+            </div>
+        </div>
+        
+        <div class="test-section">
+            <h2>📋 Visual Examples</h2>
+            
+            <h3>AI Message with Custom Colors:</h3>
+            <div class="chat-message ai" style="background-color: #fff8f5; color: #ff6b35; border: 1px solid #eee;">
+                This AI message now uses the color from your API theme! The text should be orange (#ff6b35) and background light orange (#fff8f5).
+            </div>
+            
+            <h3>Personalized AI Message:</h3>
+            <div class="chat-message ai isPersonalized" 
+                 style="background-color: #f3e5f5; color: #8e24aa; border: 1px solid #eee; border-left: 3px solid #8e24aa;">
+                ✨ This personalized AI message uses purple theme colors (#8e24aa) with a matching border!
+            </div>
+            
+            <h3>User Message with Custom Colors:</h3>
+            <div class="chat-message user" style="background-color: #e3f2fd; color: #2c5aa0;">
+                This user message now uses blue theme colors from the API!
+            </div>
+        </div>
+        
+        <div class="test-section">
+            <h2>🚀 Results</h2>
+            <div class="fix-highlight">
+                <strong>✅ FIXED: AI text colors from the API are now working!</strong>
+                <ul>
+                    <li>✅ <code>aiBubbleText</code> property now controls AI message text color</li>
+                    <li>✅ <code>aiBubbleBg</code> property now controls AI message background</li>
+                    <li>✅ <code>userBubbleText</code> and <code>userBubbleBg</code> also work correctly</li>
+                    <li>✅ Personalized message styling is theme-aware</li>
+                    <li>✅ Gradients still work with the new system</li>
+                    <li>✅ No more CSS overrides blocking theme colors</li>
+                </ul>
+            </div>
+        </div>
+        
+        <div class="test-section">
+            <h2>🧪 Testing Your Widget</h2>
+            <p>To test the AI text color from your API:</p>
+            <ol>
+                <li>Update your widget theme in the backend database with a custom <code>aiBubbleText</code> color</li>
+                <li>Load your widget with the API key</li>
+                <li>Send a message to get an AI response</li>
+                <li>The AI message text should now display in your custom color! 🎨</li>
+            </ol>
+            
+            <div class="code-example">
+Example theme update:
+{
+  "aiBubbleText": "#e91e63",     // Bright pink AI text
+  "aiBubbleBg": "#fce4ec",       // Light pink background
+  "userBubbleText": "#1976d2",   // Blue user text
+  "userBubbleBg": "#e3f2fd"      // Light blue background
+}
+            </div>
+        </div>
+    </div>
+</body>
+</html> 

@@ -82,18 +82,70 @@ const Widget = () => {
   const [input, setInput] = useState("");
   const [isVisible, setIsVisible] = useState(false);
 
-  // Widget configuration state
-  const [widgetConfig, setWidgetConfig] = useState({
+  // Widget configuration state - Updated to use new detailed theme structure
+  const [widgetTheme, setWidgetTheme] = useState({
+    // ===== BASIC WIDGET SETTINGS =====
+    fontFamily: "Arial, sans-serif",
     headerText: "AI Chat",
-    welcomeMessage: "Welcome to our chat!",
+    launcherIcon: "chat_bubble",
+    
+    // ===== LAUNCHER BUTTON STYLING =====
+    launcherButtonBg: "#007bff",
+    launcherButtonColor: "#ffffff",
+    launcherButtonSize: "60px",
+    launcherButtonBorderRadius: "50%",
+    
     primaryColor: "#007bff",
     secondaryColor: "#f0f0f0",
+    showWelcomeMessage: true,
+    welcomeMessage: "Welcome to our chat!",
     textColor: "#000000",
-    fontFamily: "Arial, sans-serif",
-    widgetPosition: "bottom-right", // e.g., "bottom-right", "bottom-left"
-    launcherIcon: "Chat", // Could be text or an icon class
-    widgetShape: "rounded", // e.g., "rounded", "square"
-    showWelcomeMessage: true
+    widgetPosition: "bottom-right",
+    widgetShape: "rounded",
+
+    // ===== HEADER SECTION =====
+    headerBgColor: "#007bff",
+    headerTextColor: "#ffffff",
+    headerFontSize: "1.1rem",
+    headerFontWeight: "bold",
+    logoutColor: "#dc3545",
+    logoutFontSize: "0.9rem",
+    closeIconColor: "#ffffff",
+
+    // ===== STATUS MESSAGES =====
+    loginMsgBg: "#f8f9fa",
+    loginMsgText: "#495057",
+    loginMsgFontSize: "0.9rem",
+    loginMsgFontWeight: "normal",
+    usageBoxBg: "#e9ecef",
+    usageBoxText: "#495057",
+    usageBoxFontSize: "0.85rem",
+
+    // ===== CHAT AREA =====
+    chatAreaBg: "#f9f9f9",
+    userBubbleBg: "#dcf8c6",
+    userBubbleText: "#333333",
+    userBubbleFontSize: "0.95rem",
+    userBubbleFontFamily: "Arial, sans-serif",
+    aiBubbleBg: "#ffffff",
+    aiBubbleText: "#333333",
+    aiBubbleFontSize: "0.95rem",
+    personalizedTagBg: "#e1f5fe",
+    personalizedTagTextColor: "#03a9f4",
+    personalizedTagFontSize: "0.7rem",
+    personalizedTagFontWeight: "500",
+
+    // ===== INPUT SECTION =====
+    inputBg: "#ffffff",
+    inputTextColor: "#333333",
+    inputPlaceholderColor: "#999999",
+    inputFontSize: "0.9rem",
+    inputFontFamily: "Arial, sans-serif",
+    inputFormBackground: "#ffffff",
+    sendButtonBg: "#007bff",
+    sendButtonTextColor: "#ffffff",
+    sendButtonFontSize: "1rem",
+    sendButtonFontWeight: "normal"
   });
 
   // AI Personality state
@@ -101,6 +153,27 @@ const Widget = () => {
     greetingMessage: null,
     // Potentially other fields like aiName, fallbackResponse if needed later
   });
+
+  // Helper function to detect gradients and apply them correctly
+  const getBackgroundStyle = (colorValue) => {
+    if (!colorValue) return {};
+    
+    // Check if the color value contains gradient keywords
+    const isGradient = colorValue.includes('gradient(') || 
+                      colorValue.includes('linear-gradient') || 
+                      colorValue.includes('radial-gradient') || 
+                      colorValue.includes('conic-gradient') ||
+                      colorValue.includes('repeating-linear-gradient') ||
+                      colorValue.includes('repeating-radial-gradient');
+    
+    if (isGradient) {
+      // For gradients, use the 'background' property
+      return { background: colorValue };
+    } else {
+      // For solid colors, use 'backgroundColor'
+      return { backgroundColor: colorValue };
+    }
+  };
 
   // IMPORTANT: Display usage information in chat
   const displayUsageInfo = () => {
@@ -172,13 +245,15 @@ const Widget = () => {
     console.log("✅ IMPORTANT: Usage data refreshed successfully");
   };
 
-  // Fetch widget configuration
+  // Fetch widget theme configuration using new endpoint
   useEffect(() => {
-    const fetchWidgetConfig = async () => {
+    const fetchWidgetTheme = async () => {
       if (!businessId) return;
 
       try {
-        const response = await fetch(`${BACKEND_URL}/api/widget-configurations/business/${businessId}`, {
+        console.log("🎨 Fetching widget theme for business ID:", businessId);
+        
+        const response = await fetch(`${BACKEND_URL}/api/widget-themes/business/${businessId}`, {
           method: "GET",
           headers: {
             "Content-Type": "application/json",
@@ -187,19 +262,44 @@ const Widget = () => {
           }
         });
 
+        console.log("🎨 Widget theme response status:", response.status);
+
         if (!response.ok) {
-          throw new Error("Failed to fetch widget configuration");
+          if (response.status === 404) {
+            console.log("🎨 No widget theme found, using default theme");
+            return; // Use default theme
+          }
+          throw new Error(`Failed to fetch widget theme: ${response.status}`);
         }
 
-        const data = await response.json();
-        setWidgetConfig(data);
+        const themeData = await response.json();
+        console.log("🎨 Successfully fetched widget theme:", themeData);
+        
+        // Update widget theme state with fetched data, keeping defaults for missing values
+        setWidgetTheme(prevTheme => ({
+          ...prevTheme,
+          ...themeData,
+          // Ensure we have fallback values for critical properties
+          fontFamily: themeData.fontFamily || prevTheme.fontFamily,
+          headerText: themeData.headerText || prevTheme.headerText,
+          launcherIcon: themeData.launcherIcon || prevTheme.launcherIcon,
+          primaryColor: themeData.primaryColor || prevTheme.primaryColor,
+          secondaryColor: themeData.secondaryColor || prevTheme.secondaryColor,
+          widgetPosition: themeData.widgetPosition || prevTheme.widgetPosition,
+          widgetShape: themeData.widgetShape || prevTheme.widgetShape
+        }));
+        
       } catch (error) {
-        console.error("Error fetching widget configuration:", error);
+        console.error("❌ Error fetching widget theme:", error);
+        console.log("🎨 Using default theme due to error");
+        // Continue with default theme
       }
     };
 
-    fetchWidgetConfig();
+    fetchWidgetTheme();
   }, [businessId, apiKey]);
+
+
 
   // IMPORTANT: Check monthly reset and fetch conversations count when businessId is set
   useEffect(() => {
@@ -2488,71 +2588,157 @@ const Widget = () => {
     scrollToBottom();
   }, [messages]);
 
-  // Dynamic styles based on widgetConfig
+  // Dynamic styles based on widgetTheme (updated to use new detailed theme properties)
   const widgetContainerStyle = {
-    fontFamily: widgetConfig.fontFamily,
-    backgroundColor: widgetConfig.secondaryColor,
-    borderRadius: widgetConfig.widgetShape === "rounded" ? "15px" : "0px",
+    fontFamily: widgetTheme.fontFamily,
+    ...getBackgroundStyle(widgetTheme.secondaryColor),
+    borderRadius: widgetTheme.widgetShape === "rounded" ? "15px" : 
+                   widgetTheme.widgetShape === "square" ? "0px" : 
+                   widgetTheme.widgetShape === "circle" ? "50%" : "15px",
     // Position is handled by class name
   };
 
   const floatingButtonStyle = {
-    backgroundColor: widgetConfig.primaryColor,
-    // Assuming launcherIcon is text for now, if it's an icon, this might need to change
+    ...getBackgroundStyle(widgetTheme.launcherButtonBg),
+    color: widgetTheme.launcherButtonColor,
+    width: widgetTheme.launcherButtonSize,
+    height: widgetTheme.launcherButtonSize,
+    borderRadius: widgetTheme.launcherButtonBorderRadius,
+    fontSize: '24px' // Icon size
   };
 
   const headerStyle = {
-    backgroundColor: widgetConfig.primaryColor,
-    color: 'white', // Changed for better contrast on primary color
-    fontFamily: widgetConfig.fontFamily,
+    ...getBackgroundStyle(widgetTheme.headerBgColor),
+    color: widgetTheme.headerTextColor,
+    fontFamily: widgetTheme.fontFamily,
+    fontSize: widgetTheme.headerFontSize,
+    fontWeight: widgetTheme.headerFontWeight,
   };
 
   const chatContentStyle = {
-    backgroundColor: widgetConfig.secondaryColor, // Or a lighter shade
-    color: widgetConfig.textColor,
-    fontFamily: widgetConfig.fontFamily,
+    ...getBackgroundStyle(widgetTheme.chatAreaBg),
+    color: widgetTheme.textColor,
+    fontFamily: widgetTheme.fontFamily,
   };
   
-  const messageStyle = (sender) => ({
-    color: widgetConfig.textColor,
-    fontFamily: widgetConfig.fontFamily,
-    // Specific background for user/ai messages can remain in CSS or be customized here
-    // For example:
-    // backgroundColor: sender === 'user' ? widgetConfig.primaryColor : widgetConfig.secondaryColor,
-    // color: sender === 'user' ? '#ffffff' : widgetConfig.textColor, // Assuming white text on primary color
-  });
+  const messageStyle = (sender) => {
+    if (sender === 'user') {
+      return {
+        ...getBackgroundStyle(widgetTheme.userBubbleBg),
+        color: widgetTheme.userBubbleText,
+        fontFamily: widgetTheme.userBubbleFontFamily || widgetTheme.fontFamily,
+        fontSize: widgetTheme.userBubbleFontSize,
+      };
+    } else if (sender === 'ai') {
+      return {
+        ...getBackgroundStyle(widgetTheme.aiBubbleBg),
+        color: widgetTheme.aiBubbleText,
+        fontFamily: widgetTheme.fontFamily,
+        fontSize: widgetTheme.aiBubbleFontSize,
+      };
+    } else {
+      return {
+        color: widgetTheme.textColor,
+        fontFamily: widgetTheme.fontFamily,
+      };
+    }
+  };
 
   const inputStyle = {
-    fontFamily: widgetConfig.fontFamily,
-    borderColor: widgetConfig.primaryColor, // For focus or general border
-    backgroundColor: widgetConfig.secondaryColor, // Or a specific input background
-    color: widgetConfig.textColor,
+    fontFamily: widgetTheme.inputFontFamily || widgetTheme.fontFamily,
+    borderColor: widgetTheme.primaryColor,
+    ...getBackgroundStyle(widgetTheme.inputBg),
+    color: widgetTheme.inputTextColor,
+    fontSize: widgetTheme.inputFontSize,
   };
 
   const sendButtonStyle = {
-    backgroundColor: widgetConfig.primaryColor,
-    color: 'white', // Ensure icon/text is white for contrast
-    fontFamily: widgetConfig.fontFamily,
-    padding: '8px', // Adjust padding for an icon button
+    ...getBackgroundStyle(widgetTheme.sendButtonBg),
+    color: widgetTheme.sendButtonTextColor,
+    fontFamily: widgetTheme.fontFamily,
+    fontSize: widgetTheme.sendButtonFontSize,
+    fontWeight: widgetTheme.sendButtonFontWeight,
+    padding: '8px',
     display: 'flex',
     alignItems: 'center',
     justifyContent: 'center',
-    border: 'none', // Clean up button style for icon
-    borderRadius: '50%', // Make it circular if desired, or use widgetConfig.widgetShape
+    border: 'none',
+    borderRadius: '50%',
   };
 
   const welcomeMessageStyle = {
-    backgroundColor: widgetConfig.secondaryColor, // Or a slightly different shade
-    color: widgetConfig.textColor,
-    fontFamily: widgetConfig.fontFamily,
+    ...getBackgroundStyle(widgetTheme.secondaryColor),
+    color: widgetTheme.textColor,
+    fontFamily: widgetTheme.fontFamily,
     padding: '10px',
     margin: '10px',
     borderRadius: '8px',
     textAlign: 'center'
   };
+
+  const logoutButtonStyle = {
+    ...getBackgroundStyle(widgetTheme.logoutColor),
+    color: widgetTheme.headerTextColor,
+    fontSize: widgetTheme.logoutFontSize,
+    border: 'none',
+    padding: '6px 10px',
+    marginRight: '8px',
+    borderRadius: '4px',
+    cursor: 'pointer'
+  };
+
+  const closeButtonStyle = {
+    color: widgetTheme.closeIconColor,
+    background: 'none',
+    border: 'none',
+    fontSize: '20px',
+    cursor: 'pointer',
+    padding: '5px',
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'center'
+  };
+
+  const apiKeySectionStyle = {
+    ...getBackgroundStyle(widgetTheme.loginMsgBg),
+    color: widgetTheme.loginMsgText,
+    fontSize: widgetTheme.loginMsgFontSize,
+    fontWeight: widgetTheme.loginMsgFontWeight,
+    fontFamily: widgetTheme.fontFamily
+  };
+
+  const usageButtonStyle = {
+    ...getBackgroundStyle(widgetTheme.usageBoxBg),
+    color: widgetTheme.usageBoxText,
+    fontSize: widgetTheme.usageBoxFontSize,
+    fontFamily: widgetTheme.fontFamily,
+    border: 'none',
+    borderRadius: '4px',
+    cursor: 'pointer',
+    padding: '8px 12px'
+  };
+
+  const personalizedBadgeStyle = {
+    ...getBackgroundStyle(widgetTheme.personalizedTagBg),
+    color: widgetTheme.personalizedTagTextColor,
+    fontSize: widgetTheme.personalizedTagFontSize,
+    fontWeight: widgetTheme.personalizedTagFontWeight,
+    padding: '2px 6px',
+    borderRadius: '4px',
+    marginBottom: '4px',
+    display: 'inline-block'
+  };
+
+  const inputFormStyle = {
+    ...getBackgroundStyle(widgetTheme.inputFormBackground),
+    borderTop: `1px solid ${widgetTheme.primaryColor}`,
+    padding: '10px 15px'
+  };
   
   // Determine widget position class
-  const widgetPositionClass = widgetConfig.widgetPosition === "bottom-left" ? "bottom-left" : "bottom-right";
+  const widgetPositionClass = widgetTheme.widgetPosition === "bottom-left" ? "bottom-left" : 
+                             widgetTheme.widgetPosition === "top-right" ? "top-right" :
+                             widgetTheme.widgetPosition === "top-left" ? "top-left" : "bottom-right";
 
   return (
     <>
@@ -2563,8 +2749,8 @@ const Widget = () => {
         style={floatingButtonStyle}
       >
         {/* Render launcherIcon as a Material Icon */}
-        <span className="material-icons-outlined" style={{ color: 'white', fontSize: '24px' }}>
-          {widgetConfig.launcherIcon || "chat_bubble"}
+        <span className="material-icons-outlined" style={{ color: widgetTheme.launcherButtonColor, fontSize: '24px' }}>
+          {widgetTheme.launcherIcon || "chat_bubble"}
         </span>
       </button>
 
@@ -2575,7 +2761,7 @@ const Widget = () => {
           style={widgetContainerStyle}
         >
           {!isAuthenticated ? (
-            <div className="auth-section">
+            <div className="auth-section" style={apiKeySectionStyle}>
               {showLogin ? (
                 <LoginForm
                   loginEmail={loginEmail}
@@ -2599,17 +2785,22 @@ const Widget = () => {
           ) : (
             <>
               <div className="chat-header" style={headerStyle}>
-                <h4>{widgetConfig.headerText}</h4>
+                <h4 style={{ margin: 0, fontSize: widgetTheme.headerFontSize, fontWeight: widgetTheme.headerFontWeight }}>
+                  {widgetTheme.headerText}
+                </h4>
                 <div>
                   <button 
                     className="logout-button" 
                     onClick={handleLogout} 
-                    // Optionally style logout button with widgetConfig colors
-                    // style={{ backgroundColor: widgetConfig.primaryColor, color: 'white' }}
+                    style={logoutButtonStyle}
                   >
                     Logout
                   </button>
-                  <button className="close-button" onClick={toggleWidget} style={{ color: 'white' /* Ensure contrast against header background */ }}>
+                  <button 
+                    className="close-button" 
+                    onClick={toggleWidget} 
+                    style={closeButtonStyle}
+                  >
                     ✖
                   </button>
                 </div>
@@ -2617,7 +2808,7 @@ const Widget = () => {
 
               {/* Show API Key input if businessId is not set yet */}
               {!businessId && (
-                <div className="api-key-section" style={{backgroundColor: widgetConfig.secondaryColor}}>
+                <div className="api-key-section" style={apiKeySectionStyle}>
                   <form onSubmit={(e) => {
                     e.preventDefault();
                     getBusinessIdFromApiKey(apiKey);
@@ -2631,34 +2822,52 @@ const Widget = () => {
                         setError(""); // Clear error when typing
                       }}
                       className="api-key-input"
-                      style={{fontFamily: widgetConfig.fontFamily, color: widgetConfig.textColor}}
+                      style={{
+                        fontFamily: widgetTheme.fontFamily, 
+                        color: widgetTheme.inputTextColor,
+                        ...getBackgroundStyle(widgetTheme.inputBg),
+                        fontSize: widgetTheme.inputFontSize
+                      }}
                     />
                     <button 
                       type="submit" 
                       className="api-key-submit"
                       disabled={!apiKey?.trim()}
-                      style={{backgroundColor: widgetConfig.primaryColor, color: 'white', fontFamily: widgetConfig.fontFamily}}
+                      style={{
+                        ...getBackgroundStyle(widgetTheme.primaryColor), 
+                        color: widgetTheme.sendButtonTextColor, 
+                        fontFamily: widgetTheme.fontFamily,
+                        fontSize: widgetTheme.sendButtonFontSize
+                      }}
                     >
                       Verify API Key
                     </button>
-                    {error && <div className="error-message" style={{fontFamily: widgetConfig.fontFamily, color: widgetConfig.textColor}}>{error}</div>}
+                    {error && (
+                      <div 
+                        className="error-message" 
+                        style={{
+                          fontFamily: widgetTheme.fontFamily, 
+                          color: '#dc2626',
+                          ...getBackgroundStyle('#fef2f2'),
+                          border: '1px solid #fecaca'
+                        }}
+                      >
+                        {error}
+                      </div>
+                    )}
                   </form>
                 </div>
               )}
 
               {businessId && (
-                <div className="api-key-section" style={{ margin: '10px 0', padding: '10px', backgroundColor: widgetConfig.secondaryColor, borderRadius: '4px' }}>
+                <div className="api-key-section" style={{ margin: '10px 0', padding: '10px', ...getBackgroundStyle(widgetTheme.usageBoxBg), borderRadius: '4px' }}>
                   <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
                     <button 
                       onClick={testPersonalizationEndpoint}
                       style={{
-                        padding: '8px 12px',
-                        backgroundColor: widgetConfig.primaryColor,
-                        color: 'white', // Assuming white text on primary color
-                        border: 'none',
-                        borderRadius: '4px',
-                        cursor: 'pointer',
-                        fontFamily: widgetConfig.fontFamily
+                        ...usageButtonStyle,
+                        ...getBackgroundStyle(widgetTheme.primaryColor),
+                        color: widgetTheme.sendButtonTextColor
                       }}
                     >
                       Test Personalization API
@@ -2667,13 +2876,9 @@ const Widget = () => {
                     <button 
                       onClick={displayUsageInfo}
                       style={{
-                        padding: '8px 12px',
-                        backgroundColor: conversationsCount >= maxConversations && maxConversations !== -1 ? '#dc2626' : '#059669',
-                        color: 'white',
-                        border: 'none',
-                        borderRadius: '4px',
-                        cursor: 'pointer',
-                        fontFamily: widgetConfig.fontFamily
+                        ...usageButtonStyle,
+                        ...getBackgroundStyle(conversationsCount >= maxConversations && maxConversations !== -1 ? '#dc2626' : '#059669'),
+                        color: 'white'
                       }}
                     >
                       {subscriptionLoading ? 'Loading...' : `Usage: ${conversationsCount}/${formatLimitValue(maxConversations)}${currentPlan ? ` (${currentPlan.name})` : ''}`}
@@ -2683,13 +2888,9 @@ const Widget = () => {
                       onClick={refreshUsageData}
                       disabled={subscriptionLoading}
                       style={{
-                        padding: '8px 12px',
-                        backgroundColor: subscriptionLoading ? '#9ca3af' : '#3b82f6',
-                        color: 'white',
-                        border: 'none',
-                        borderRadius: '4px',
-                        cursor: subscriptionLoading ? 'not-allowed' : 'pointer',
-                        fontFamily: widgetConfig.fontFamily
+                        ...usageButtonStyle,
+                        ...getBackgroundStyle(subscriptionLoading ? '#9ca3af' : '#3b82f6'),
+                        color: 'white'
                       }}
                     >
                       {subscriptionLoading ? '⏳' : '🔄'}
@@ -2699,13 +2900,9 @@ const Widget = () => {
                       onClick={() => testCheckMonthlyReset(businessId, apiKey)}
                       disabled={subscriptionLoading}
                       style={{
-                        padding: '8px 12px',
-                        backgroundColor: subscriptionLoading ? '#9ca3af' : '#f59e0b',
-                        color: 'white',
-                        border: 'none',
-                        borderRadius: '4px',
-                        cursor: subscriptionLoading ? 'not-allowed' : 'pointer',
-                        fontFamily: widgetConfig.fontFamily
+                        ...usageButtonStyle,
+                        ...getBackgroundStyle(subscriptionLoading ? '#9ca3af' : '#f59e0b'),
+                        color: 'white'
                       }}
                     >
                       Check Reset
@@ -2715,13 +2912,9 @@ const Widget = () => {
                       onClick={() => testForceResetMonthlyUsage(businessId, apiKey)}
                       disabled={subscriptionLoading}
                       style={{
-                        padding: '8px 12px',
-                        backgroundColor: subscriptionLoading ? '#9ca3af' : '#dc2626',
-                        color: 'white',
-                        border: 'none',
-                        borderRadius: '4px',
-                        cursor: subscriptionLoading ? 'not-allowed' : 'pointer',
-                        fontFamily: widgetConfig.fontFamily
+                        ...usageButtonStyle,
+                        ...getBackgroundStyle(subscriptionLoading ? '#9ca3af' : '#dc2626'),
+                        color: 'white'
                       }}
                     >
                       Force Reset
@@ -2731,28 +2924,29 @@ const Widget = () => {
                       onClick={() => fetchInvoiceAndPlanData(businessId, apiKey)}
                       disabled={isLoadingInvoices}
                       style={{
-                        padding: '8px 12px',
-                        backgroundColor: isLoadingInvoices ? '#9ca3af' : '#8b5cf6',
-                        color: 'white',
-                        border: 'none',
-                        borderRadius: '4px',
-                        cursor: isLoadingInvoices ? 'not-allowed' : 'pointer',
-                        fontFamily: widgetConfig.fontFamily
+                        ...usageButtonStyle,
+                        ...getBackgroundStyle(isLoadingInvoices ? '#9ca3af' : '#8b5cf6'),
+                        color: 'white'
                       }}
                     >
                       {isLoadingInvoices ? '⏳' : '📄'} Invoices
                     </button>
                   </div>
-                  <div style={{ marginTop: '5px', fontSize: '12px', color: widgetConfig.textColor, fontFamily: widgetConfig.fontFamily }}>
+                  <div style={{ 
+                    marginTop: '5px', 
+                    fontSize: widgetTheme.usageBoxFontSize, 
+                    color: widgetTheme.usageBoxText, 
+                    fontFamily: widgetTheme.fontFamily 
+                  }}>
                     Use these buttons to test the personalization API and view usage information
                   </div>
                 </div>
               )}
 
               <div className="chat-content" style={chatContentStyle}>
-                {widgetConfig.showWelcomeMessage && messages.length === 0 && (
+                {widgetTheme.showWelcomeMessage && messages.length === 0 && (
                   <div className="chat-message system" style={{...welcomeMessageStyle, ...messageStyle('system')}}>
-                    {aiPersonality.greetingMessage || widgetConfig.welcomeMessage}
+                    {aiPersonality.greetingMessage || widgetTheme.welcomeMessage}
                   </div>
                 )}
                 {messages.map((msg, index) => {
@@ -2774,9 +2968,18 @@ const Widget = () => {
                           ? "ai" + (msg.isPersonalized ? " isPersonalized" : "")
                           : "system" + (msg.isMetadata ? " isMetadata" : "")
                       }`}
-                      style={messageStyle(msg.sender)} // Apply dynamic message style
+                      style={{
+                        ...messageStyle(msg.sender),
+                        ...(msg.isPersonalized && {
+                          borderLeft: `3px solid ${widgetTheme.personalizedTagTextColor}`
+                        })
+                      }}
                     >
-                      {msg.isPersonalized && <div className="personalized-badge" style={{fontSize: '0.7em', marginBottom: '4px', color: widgetConfig.primaryColor /* or a specific accent color */}}>✨ Personalized</div>}
+                      {msg.isPersonalized && (
+                        <div className="personalized-badge" style={personalizedBadgeStyle}>
+                          ✨ Personalized
+                        </div>
+                      )}
                       {msg.text}
                     </div>
                   );
@@ -2785,7 +2988,7 @@ const Widget = () => {
                 <div ref={messagesEndRef} />
               </div>
 
-              <div className="chat-input" style={{borderTop: `1px solid ${widgetConfig.primaryColor}`, backgroundColor: widgetConfig.secondaryColor}}>
+              <div className="chat-input" style={inputFormStyle}>
                 <input
                   type="text"
                   placeholder="Type a message..."
@@ -2793,12 +2996,20 @@ const Widget = () => {
                   onChange={(e) => setInput(e.target.value)}
                   onKeyDown={(e) => e.key === "Enter" && handleSend()}
                   disabled={!businessId || loading}
-                  style={inputStyle} // Apply dynamic input style
+                  style={{
+                    ...inputStyle,
+                    flex: 1,
+                    padding: '10px 12px',
+                    border: `1px solid ${widgetTheme.primaryColor}`,
+                    borderRadius: '20px',
+                    outline: 'none',
+                    '--placeholder-color': widgetTheme.inputPlaceholderColor
+                  }}
                 />
                 <button 
                   onClick={handleSend} 
                   disabled={!businessId || loading || !input.trim()}
-                  style={sendButtonStyle} // Apply dynamic send button style
+                  style={sendButtonStyle}
                 >
                   {/* Use Material Icon for send */}
                   <span className="material-icons-outlined">
